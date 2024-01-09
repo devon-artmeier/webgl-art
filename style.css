@@ -1,0 +1,17 @@
+body
+{
+	width: fit-content;
+	margin: auto;
+}
+
+#content
+{
+	margin: 16px;
+	width: fit-content;
+}
+
+.devon-webgl-canvas-container
+{
+	margin-top: 8px;
+	margin-bottom: 8px;
+}
