@@ -85,7 +85,7 @@ export class Canvas2 extends Canvas
 		DGL.Texture.create("texture");
 		DGL.Texture.loadImageFile("texture", "./img/test.png");
 		DGL.Texture.createMipmap("texture");
-		
+	
 		DGL.Shader.create("shader", vertexShader, fragmentShader);
 
 		DGL.Mesh.createStatic("mesh", imgVertices);

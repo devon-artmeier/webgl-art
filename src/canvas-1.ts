@@ -132,7 +132,7 @@ export class Canvas1 extends Canvas
 		let scale = ((Math.sin(radians(frame)) + 1) * 2) + 0.5;
 		
 		DGL.Viewport.set([0, 0], res);
-		DGL.Context.clear([1, 0, 1, 1]);
+		DGL.Context.clear([0, 0, 0, 1]);
 		
 		let projection = DGL.Matrix.ortho([-res[0] / 2 , -res[1] / 2], res, [0, 1]);
 		let model = DGL.Matrix.model2D([0, 0], 0, [scale, scale]);
