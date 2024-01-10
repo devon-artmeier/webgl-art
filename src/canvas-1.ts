@@ -67,9 +67,9 @@ void main(void)
 	vec2 correct = resolution / tex1Size;
 	vec2 t = (-correct / 2.0) + (texCoord * correct) + 0.5;
 	
-	float sinx = sinRange(radians((time * 100.0) + (pixelCoord.y * 2.0)) / 1.25, 1.00, 1.15);
-	float siny = sinRange(radians((-time * 100.0) + (pixelCoord.y * 2.0)) * 2.0, 0.85, 1.15);
-	float sinx2 = sinRange(radians((time * 100.0) + (pixelCoord.y * 4.0)), -0.05, 0.05) * (mod(floor(pixelCoord.y), 2.0) - 0.5);
+	float sinx = sinRange(radians((time * 50.0) + (pixelCoord.y * 2.0)) / 1.25, 1.00, 1.15);
+	float siny = sinRange(radians((-time * 50.0) + (pixelCoord.y * 2.0)) * 2.0, 0.85, 1.15);
+	float sinx2 = sinRange(radians((time * 50.0) + (pixelCoord.y * 4.0)), -0.05, 0.05) * (mod(floor(pixelCoord.y), 2.0) - 0.5);
 	
 	t.x = ((t.x * sinx) - (sinx / 2.0) - 0.5) + sinx2;
 	t.y = (t.y * siny) - (siny / 2.0) - 0.5;
@@ -130,7 +130,7 @@ export class Canvas1 extends Canvas
 		let tex1Size = DGL.Texture.getSize("texture_bg");
 		let tex2Size = DGL.Texture.getSize("texture_img");
 		
-		let scale = ((Math.sin(radians(time / 20.0)) + 1) * 2) + 0.5;
+		let scale = ((Math.sin(radians(time / 15.0)) + 1) * 2) + 0.5;
 		
 		DGL.Viewport.set([0, 0], res);
 		DGL.Context.clear([0, 0, 0, 1]);

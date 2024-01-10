@@ -42,9 +42,9 @@ ${fragShaderLib}
 void main(void)
 {
 	float segHeight = (30.0 / 256.0) * ((random() + 0.5) / 2.0);
-	float segIntensity = sinRange(radians((time * 100.0) * 4.00), 0.0, 0.05);
+	float segIntensity = sinRange(radians((time * 50.0) * 4.00), 0.0, 0.05);
 	float fuzz = (random(pixelCoord.y + randomSeed) - 0.5) / 48.0;
-	float xoff = ((step(mod(fragCoord.y, segHeight * 2.0), segHeight) - 0.5) * segIntensity) + fuzz;
+	float xoff = ((step(mod(fragCoord.y + 1.0, segHeight * 2.0), segHeight) - 0.5) * segIntensity) + fuzz;
 	
 	vec4 color = vec4(hsvToRGB(vec3(
 		(time / 4.0) + (fragCoord.y / 8.0) + (noise(texCoord, randomSeed) / 3.0),

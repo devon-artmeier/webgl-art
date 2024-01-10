@@ -9,12 +9,15 @@ layout (location = 0) in vec2 vecFragCoord;
 layout (location = 1) in vec2 vecTexCoord;
 
 out vec2 texCoord;
+out vec2 pixelCoord;
 
+uniform vec2 resolution;
 uniform mat4 projection;
 
 void main(void)
 {
 	texCoord = vecTexCoord;
+	pixelCoord = floor(vecTexCoord * resolution);
 	gl_Position = projection * vec4(vecFragCoord, 0, 1);
 }
 `;
@@ -23,19 +26,72 @@ const fragmentShader =
 `#version 300 es
 precision highp float;
 
-in vec2 fragCoord;
 in vec2 texCoord;
 in vec2 pixelCoord;
 
 out vec4 fragColor;
 
 uniform sampler2D tex;
+uniform vec2 resolution;
+uniform float time;
 
-${fragShaderLib}
+float getNeighbor(int x, int y, float xoff, float yoff, mat3 sobel)
+{
+	vec4 pixel = texture(tex, vec2(pixelCoord.x + float(x) + xoff, pixelCoord.y + float(y) + yoff) / resolution) * sobel[x + 1][y + 1];
+	return (pixel.r + pixel.g + pixel.b) / 3.0;
+}
+
+float sobel(float xoff, float yoff)
+{
+	mat3 sobelX;
+	sobelX[0] = vec3(-1.0, 0.0, 1.0);
+	sobelX[1] = vec3(-2.0, 0.0, 2.0);
+	sobelX[2] = vec3(-1.0, 0.0, 1.0);
 	
+	mat3 sobelY;
+	sobelY[0] = vec3( 1.0,  2.0,  1.0);
+	sobelY[1] = vec3( 0.0,  0.0,  0.0);
+	sobelY[2] = vec3(-1.0, -2.0, -1.0);
+	
+	float sx = getNeighbor(-1, -1, xoff, yoff, sobelX) +
+		getNeighbor(0, -1, xoff, yoff, sobelX) +
+		getNeighbor(1, -1, xoff, yoff, sobelX) +
+		getNeighbor(-1, 0, xoff, yoff, sobelX) +
+		getNeighbor(0, 0, xoff, yoff, sobelX) +
+		getNeighbor(1, 0, xoff, yoff, sobelX) +
+		getNeighbor(-1, 1, xoff, yoff, sobelX) +
+		getNeighbor(0, 1, xoff, yoff, sobelX) +
+		getNeighbor(1, 1, xoff, yoff, sobelX);
+		
+	float sy = getNeighbor(-1, -1, xoff, yoff, sobelY) +
+		getNeighbor(0, -1, xoff, yoff, sobelY) +
+		getNeighbor(1, -1, xoff, yoff, sobelY) +
+		getNeighbor(-1, 0, xoff, yoff, sobelY) +
+		getNeighbor(0, 0, xoff, yoff, sobelY) +
+		getNeighbor(1, 0, xoff, yoff, sobelY) +
+		getNeighbor(-1, 1, xoff, yoff, sobelY) +
+		getNeighbor(0, 1, xoff, yoff, sobelY) +
+		getNeighbor(1, 1, xoff, yoff, sobelY);
+	
+	float c = min(1.0, sqrt((sx * sx) + (sy * sy)));
+	if (c <= 16.0 / 255.0) c = 0.0;
+	return c;
+}
+
 void main(void)
 {
-	fragColor = texture(tex, texCoord);
+	float a = time * 6.0;
+	float d = 32.0;
+	
+	float cr1 = sobel(cos(a) * -d, sin(a) * -d);
+	float cg1 = sobel(0.0, 0.0);
+	float cb1 = sobel(cos(a) * d, sin(a) * d);
+	
+	float cr2 = sobel(-4.0, 0.0);
+	float cg2 = sobel(0.0, 0.0);
+	float cb2 = sobel(4.0, 0.0);
+	
+	fragColor = (texture(tex, texCoord) * vec4(cr1, cg1, cb1, 1)) + vec4(cr2, cg2, cb2, 1);
 }
 `
 
@@ -156,6 +212,8 @@ export class Canvas3 extends Canvas
 			
 		DGL.Shader.bind("shader");
 			
+		DGL.Shader.setVec2("resolution", aspect);
+		DGL.Shader.setFloat("time", time / 1000.0);
 		DGL.Shader.setMatrix4("projection", projection);
 		DGL.Shader.setTexture("tex", 0);
 			
