@@ -42,7 +42,7 @@ ${fragShaderLib}
 void main(void)
 {
 	float segHeight = (30.0 / 256.0) * ((random() + 0.5) / 2.0);
-	float segIntensity = sinRange(radians(frame * 4.00), 0.0, 0.05);
+	float segIntensity = sinRange(radians((time * 100.0) * 4.00), 0.0, 0.05);
 	float fuzz = (random(pixelCoord.y + randomSeed) - 0.5) / 48.0;
 	float xoff = ((step(mod(fragCoord.y, segHeight * 2.0), segHeight) - 0.5) * segIntensity) + fuzz;
 	
@@ -109,7 +109,6 @@ export class Canvas2 extends Canvas
 		
 		DGL.Shader.setVec2("resolution", res);
 		DGL.Shader.setFloat("time", time / 1000.0);
-		DGL.Shader.setFloat("frame", frame);
 		DGL.Shader.setFloat("randomSeed", Math.random());
 		
 		DGL.Shader.setMatrix4("projection", projection);
