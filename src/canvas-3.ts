@@ -133,6 +133,7 @@ export class Canvas3 extends Canvas
 			}
 			
 			DGL.Texture.loadVideoFrame("texture", this.video);
+			this._videoTimeUpdate = false;
 		}
 	}
 	
