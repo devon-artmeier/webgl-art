@@ -8,6 +8,7 @@ const vertexShader =
 layout (location = 0) in vec2 vecFragCoord;
 layout (location = 1) in vec2 vecTexCoord;
 
+out vec2 fragCoord;
 out vec2 texCoord;
 out vec2 pixelCoord;
 
@@ -16,6 +17,7 @@ uniform mat4 projection;
 
 void main(void)
 {
+	fragCoord = vecFragCoord;
 	texCoord = vecTexCoord;
 	pixelCoord = floor(vecTexCoord * resolution);
 	gl_Position = projection * vec4(vecFragCoord, 0, 1);
@@ -26,18 +28,20 @@ const fragmentShader =
 `#version 300 es
 precision highp float;
 
+in vec2 fragCoord;
 in vec2 texCoord;
 in vec2 pixelCoord;
 
 out vec4 fragColor;
 
 uniform sampler2D tex;
-uniform vec2 resolution;
-uniform float time;
+
+${fragShaderLib}
 
 float getNeighbor(int x, int y, float xoff, float yoff, mat3 sobel)
 {
-	vec4 pixel = texture(tex, vec2(pixelCoord.x + float(x) + xoff, pixelCoord.y + float(y) + yoff) / resolution) * sobel[x + 1][y + 1];
+	vec2 coord = vec2(pixelCoord.x + float(x) + xoff, pixelCoord.y + float(y) + yoff) / resolution;
+	vec4 pixel = texture(tex, coord) * sobel[x + 1][y + 1];
 	return (pixel.r + pixel.g + pixel.b) / 3.0;
 }
 
@@ -73,25 +77,43 @@ float sobel(float xoff, float yoff)
 		getNeighbor(0, 1, xoff, yoff, sobelY) +
 		getNeighbor(1, 1, xoff, yoff, sobelY);
 	
-	float c = min(1.0, sqrt((sx * sx) + (sy * sy)));
-	if (c <= 16.0 / 255.0) c = 0.0;
+	float c = clamp(sqrt((sx * sx) + (sy * sy)), 0.0, 1.0);
+	if (c <= 32.0 / 255.0) c = 0.0;
 	return c;
+}
+
+vec4 mixColor(vec4 c1, vec4 c2)
+{
+	vec4 c = vec4(c1.r + c2.r, c1.g - c2.r, c1.b - c2.r, 1);
+	c = vec4(c.r - c2.g, c.g + c2.g, c.b - c2.g, 1);
+	c = vec4(c.r - c2.b, c.g - c2.b, c.b + c2.b, 1);
+	return clamp(c, 0.0, 1.0);
 }
 
 void main(void)
 {
 	float a = time * 6.0;
-	float d = 32.0;
+	float d = 48.0;
+	float d2 = 4.0;
 	
 	float cr1 = sobel(cos(a) * -d, sin(a) * -d);
 	float cg1 = sobel(0.0, 0.0);
 	float cb1 = sobel(cos(a) * d, sin(a) * d);
 	
-	float cr2 = sobel(-4.0, 0.0);
+	float cr2 = sobel(-d2, 0.0);
 	float cg2 = sobel(0.0, 0.0);
-	float cb2 = sobel(4.0, 0.0);
+	float cb2 = sobel(d2, 0.0);
 	
-	fragColor = (texture(tex, texCoord) * vec4(cr1, cg1, cb1, 1)) + vec4(cr2, cg2, cb2, 1);
+	vec4 baseColor = texture(tex, texCoord);
+	vec4 color1 = vec4(cr1, cg1, cb1, 1);
+	vec4 color2 = vec4(cr2, cg2, cb2, 1);
+	
+	vec4 hue = vec4(hsvToRGB(vec3(
+		(time / 4.0) + (fragCoord.y / 512.0) + (noise(texCoord, randomSeed) / 2.0),
+		2.0, 2.0
+	)) * noise(texCoord, randomSeed), 1);
+	
+	fragColor = mixColor(baseColor * hue, color1) + color2;
 }
 `
 
@@ -214,9 +236,11 @@ export class Canvas3 extends Canvas
 			
 		DGL.Shader.setVec2("resolution", aspect);
 		DGL.Shader.setFloat("time", time / 1000.0);
+		DGL.Shader.setFloat("randomSeed", Math.random())
+		
 		DGL.Shader.setMatrix4("projection", projection);
+		
 		DGL.Shader.setTexture("tex", 0);
-			
 		DGL.Texture.setActive(0, "texture");
 			
 		DGL.Mesh.draw("mesh");
