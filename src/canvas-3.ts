@@ -92,28 +92,21 @@ vec4 mixColor(vec4 c1, vec4 c2)
 
 void main(void)
 {
-	float a = time * 6.0;
-	float d = 48.0;
-	float d2 = 4.0;
-	
-	float cr1 = sobel(cos(a) * -d, sin(a) * -d);
-	float cg1 = sobel(0.0, 0.0);
-	float cb1 = sobel(cos(a) * d, sin(a) * d);
-	
-	float cr2 = sobel(-d2, 0.0);
-	float cg2 = sobel(0.0, 0.0);
-	float cb2 = sobel(d2, 0.0);
+	float d = 4.0;
+
+	float cr = sobel(-d, 0.0);
+	float cg = sobel(0.0, 0.0);
+	float cb = sobel(d, 0.0);
 	
 	vec4 baseColor = texture(tex, texCoord);
-	vec4 color1 = vec4(cr1, cg1, cb1, 1);
-	vec4 color2 = vec4(cr2, cg2, cb2, 1);
+	vec4 color = vec4(cr, cg, cb, 1);
 	
 	vec4 hue = vec4(hsvToRGB(vec3(
 		(time / 4.0) + (fragCoord.y / 512.0) + (noise(texCoord, randomSeed) / 2.0),
 		2.0, 2.0
 	)) * noise(texCoord, randomSeed), 1);
 	
-	fragColor = mixColor(baseColor * hue, color1) + color2;
+	fragColor = (baseColor * hue) + color;
 }
 `
 
