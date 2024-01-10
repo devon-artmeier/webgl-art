@@ -83,7 +83,7 @@ export class Canvas2 extends Canvas
 		super(id, [480, 480]);
 		
 		DGL.Texture.create("texture");
-		DGL.Texture.loadImage("texture", "./img/test.png");
+		DGL.Texture.loadImageFile("texture", "./img/test.png");
 		DGL.Texture.createMipmap("texture");
 		
 		DGL.Shader.create("shader", vertexShader, fragmentShader);

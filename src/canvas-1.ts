@@ -110,12 +110,12 @@ export class Canvas1 extends Canvas
 		super(id, [480, 480]);
 		
 		DGL.Texture.create("texture_bg");
-		DGL.Texture.loadImage("texture_bg", "./img/test.png");
+		DGL.Texture.loadImageFile("texture_bg", "./img/test.png");
 		DGL.Texture.setWrap("texture_bg", DGL.Texture.Mirror);
 		DGL.Texture.createMipmap("texture_bg");
 		
 		DGL.Texture.create("texture_img");
-		DGL.Texture.loadImage("texture_img", "./img/test2.png");
+		DGL.Texture.loadImageFile("texture_img", "./img/test2.png");
 		DGL.Texture.createMipmap("texture_img");
 		
 		DGL.Shader.create("shader", vertexShader, fragmentShader);
