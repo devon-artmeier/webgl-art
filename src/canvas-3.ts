@@ -110,7 +110,42 @@ void main(void)
 }
 `
 
-class Vertex extends DGL.Vertex
+const vertexShaderCube =
+`#version 300 es
+
+layout (location = 0) in vec3 vecFragCoord;
+layout (location = 1) in vec2 vecTexCoord;
+
+out vec2 texCoord;
+
+uniform mat4 projection;
+uniform mat4 view;
+uniform mat4 model;
+
+void main(void)
+{
+	texCoord = vecTexCoord;
+	gl_Position = projection * view * model * vec4(vecFragCoord, 1);
+}
+`;
+
+const fragmentShaderCube = 
+`#version 300 es
+precision highp float;
+
+in vec2 texCoord;
+
+out vec4 fragColor;
+
+uniform sampler2D tex;
+
+void main(void)
+{
+	fragColor = texture(tex, texCoord);
+}
+`
+
+class Vertex2D extends DGL.Vertex
 {
 	constructor(public coord: DGL.Vector2<number>,
 		public tex: DGL.Vector2<number>) { super(); }
@@ -121,13 +156,65 @@ class Vertex extends DGL.Vertex
 	}
 }
 
+class Vertex3D extends DGL.Vertex
+{
+	constructor(public coord: DGL.Vector3<number>,
+		public tex: DGL.Vector2<number>) { super(); }
+
+	public getData(): readonly number[][]
+	{
+		return [this.coord, this.tex];
+	}
+}
+
 const imgVertices = [
-	new Vertex([0, 0], [0, 0]),
-	new Vertex([0, 0], [1, 1]),
-	new Vertex([0, 0], [1, 0]),
-	new Vertex([0, 0], [1, 1]),
-	new Vertex([0, 0], [0, 0]),
-	new Vertex([0, 0], [0, 1])
+	new Vertex2D([0, 0], [0, 0]),
+	new Vertex2D([0, 0], [1, 1]),
+	new Vertex2D([0, 0], [1, 0]),
+	new Vertex2D([0, 0], [1, 1]),
+	new Vertex2D([0, 0], [0, 0]),
+	new Vertex2D([0, 0], [0, 1])
+];
+
+const cubeVertices = [
+	new Vertex3D([-1, -1, -1],  [0, 0]),
+	new Vertex3D([ 1,  1, -1],  [1, 1]),
+	new Vertex3D([ 1, -1, -1],  [1, 0]),
+	new Vertex3D([-1,  1, -1],  [0, 1]),
+	 
+	new Vertex3D([-1, -1,  1],  [0, 0]),
+	new Vertex3D([ 1, -1,  1],  [1, 0]),
+	new Vertex3D([ 1,  1,  1],  [1, 1]),
+	new Vertex3D([-1,  1,  1],  [0, 1]),
+	
+	new Vertex3D([-1,  1,  1],  [1, 0]),
+	new Vertex3D([-1,  1, -1],  [1, 1]),
+	new Vertex3D([-1, -1, -1],  [0, 1]),
+	new Vertex3D([-1, -1,  1],  [0, 0]),
+	
+	new Vertex3D([ 1,  1,  1],  [1, 0]),
+	new Vertex3D([ 1, -1, -1],  [0, 1]),
+	new Vertex3D([ 1,  1, -1],  [1, 1]),
+	new Vertex3D([ 1, -1,  1],  [0, 0]),
+	 
+	new Vertex3D([-1, -1, -1],  [0, 1]),
+	new Vertex3D([ 1, -1, -1],  [1, 1]),
+	new Vertex3D([ 1, -1,  1],  [1, 0]),
+	new Vertex3D([-1, -1,  1],  [0, 0]),
+	 
+	new Vertex3D([-1,  1, -1],  [0, 1]),
+	new Vertex3D([ 1,  1,  1],  [1, 0]),
+	new Vertex3D([ 1,  1, -1],  [1, 1]),
+	new Vertex3D([-1,  1,  1],  [0, 0])
+];
+
+const cubeElements = [
+	0,  1,  2,  1,  0,  3,
+	4,  5,  6,  6,  7,  4,
+	8,  9,  10, 10, 11, 8,
+	12, 13, 14, 13, 12, 15,
+	16, 17, 18, 18, 19, 16,
+	20, 21, 22, 21, 20, 23
 ];
 
 export class Canvas3 extends Canvas
@@ -143,12 +230,14 @@ export class Canvas3 extends Canvas
 		
 		DGL.Texture.create("texture");
 		DGL.Shader.create("shader", vertexShader, fragmentShader);
+		DGL.Shader.create("shader_cube", vertexShaderCube, fragmentShaderCube);
 		DGL.Mesh.createDynamic("mesh");
+		DGL.Mesh.createStatic("mesh_cube", cubeVertices, cubeElements);
 		
 		this.video = document.createElement("video");
 		this.video.playsInline = true;
 		this.video.loop = true;
-		this.video.width = 640;
+		this.video.width = 10;
 		this.video.height = 480;
 		
 		this.video.addEventListener(
@@ -207,9 +296,16 @@ export class Canvas3 extends Canvas
 			this._videoTimeUpdate = false;
 		}
 	}
+
+	private radians(angle: number): number
+	{
+		return angle * (Math.PI / 180);
+	}
 	
 	public update(time: number, frame: number)
 	{
+		DGL.Depth.disable();
+
 		let res = DGL.Context.getSize();
 		let textureSize = DGL.Texture.getSize("texture");
 		
@@ -223,7 +319,7 @@ export class Canvas3 extends Canvas
 			aspect = [textureSize[0], textureSize[0] * (res[1] / res[0])];
 		}
 		
-		let projection = DGL.Matrix.ortho([-aspect[0] / 2, -aspect[1] / 2], aspect, [0, 1]);
+		let projection = DGL.Matrix.ortho([-aspect[0] / 2, -aspect[1] / 2], aspect, [0, 1000]);
 			
 		DGL.Shader.bind("shader");
 			
@@ -237,5 +333,43 @@ export class Canvas3 extends Canvas
 		DGL.Texture.setActive(0, "texture");
 			
 		DGL.Mesh.draw("mesh");
+		
+		if (this._videoReady) {
+			let angle = this.radians(time / 25);
+			let sin = Math.sin(angle) * 12;
+			let sin2 = Math.sin(angle * 2) * 12;
+			let cos = Math.cos(angle) * 12;
+
+			DGL.Depth.enable();
+			DGL.Depth.setFunction(DGL.Depth.LessEqual);
+
+			projection = DGL.Matrix.perspective(60, res, [0.1, 1000]);
+			let view = DGL.Matrix.view3D([cos, sin2, sin], [0, 0, 0], [0, 1, 0]);
+			
+			DGL.Shader.bind("shader_cube");
+			
+			DGL.Shader.setMatrix4("projection", projection);
+			DGL.Shader.setMatrix4("view", view);
+			
+			DGL.Shader.setTexture("tex", 0);
+			DGL.Texture.setActive(0, "texture");
+
+			let cubes = [
+				[-6, -6, -6],
+				[ 6, -6, -6],
+				[-6, -6,  6],
+				[ 6, -6,  6],
+				[-6,  6, -6],
+				[ 6,  6, -6],
+				[-6,  6,  6],
+				[ 6,  6,  6],
+			] as DGL.Vector3<number>[];
+
+			for (const cube of cubes) {
+				let model = DGL.Matrix.model3D(cube, [angle * 4, angle * 4, angle * 4], [1, 1, 1]);
+				DGL.Shader.setMatrix4("model", model);
+				DGL.Mesh.draw("mesh_cube");
+			}
+		}
 	}
 }
