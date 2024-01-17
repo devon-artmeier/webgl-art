@@ -136,7 +136,7 @@ export class Canvas1 extends Canvas
 		DGL.Context.clear([0, 0, 0, 1]);
 		
 		let projection = DGL.Matrix.ortho([-res[0] / 2 , -res[1] / 2], res, [0, 1]);
-		let model = DGL.Matrix.model2D([0, 0], 0, [scale, scale]);
+		let model = DGL.Matrix.transform2D([0, 0], 0, [scale, scale]);
 		
 		DGL.Shader.bind("shader");
 		

@@ -366,7 +366,7 @@ export class Canvas3 extends Canvas
 			] as DGL.Vector3<number>[];
 
 			for (const cube of cubes) {
-				let model = DGL.Matrix.model3D(cube, [angle * 4, angle * 4, angle * 4], [1, 1, 1]);
+				let model = DGL.Matrix.transform3D(cube, [angle * 4, angle * 4, angle * 4], [1, 1, 1]);
 				DGL.Shader.setMatrix4("model", model);
 				DGL.Mesh.draw("mesh_cube");
 			}
