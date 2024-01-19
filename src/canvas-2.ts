@@ -81,22 +81,24 @@ export class Canvas2 extends Canvas
 	constructor(id: string)
 	{
 		super(id, [480, 480]);
+		let canvas = this._glCanvas;
 		
-		DGL.Texture.create("texture");
-		DGL.Texture.loadImageFile("texture", "./img/test.png");
-		DGL.Texture.createMipmap("texture");
+		canvas.createTexture("texture");
+		canvas.loadTextureImageFile("texture", "./img/test.png");
+		canvas.genTextureMipmaps("texture");
 	
-		DGL.Shader.create("shader", vertexShader, fragmentShader);
+		canvas.createShader("shader", vertexShader, fragmentShader);
 
-		DGL.Mesh.createStatic("mesh", imgVertices);
+		canvas.createStaticMesh("mesh", imgVertices);
 	}
 	
-	public update(time: number, frame: number)
+	public update(time: number)
 	{
-		let res = DGL.Context.getSize();
-		
-		DGL.Viewport.set([0, 0], res);
-		DGL.Context.clear([0, 0, 0, 1]);
+		let canvas = this._glCanvas;
+
+		let res = canvas.size;
+		canvas.setViewport([0, 0], res);
+		canvas.clear([0, 0, 0, 1]);
 		
 		let aspect = [res[0] / res[1], 1] as DGL.Vector2<number>;
 		if (res[1] > res[0]) {
@@ -105,17 +107,14 @@ export class Canvas2 extends Canvas
 		
 		let projection = DGL.Matrix.ortho([-aspect[0] / 2, -aspect[1] / 2], aspect, [0, 1]);
 		
-		DGL.Shader.bind("shader");
+		canvas.setShaderVec2("shader", "resolution", res);
+		canvas.setShaderFloat("shader", "time", time / 1000.0);
+		canvas.setShaderFloat("shader", "randomSeed", Math.random());
 		
-		DGL.Shader.setVec2("resolution", res);
-		DGL.Shader.setFloat("time", time / 1000.0);
-		DGL.Shader.setFloat("randomSeed", Math.random());
+		canvas.setShaderMatrix4("shader", "projection", projection);
 		
-		DGL.Shader.setMatrix4("projection", projection);
+		canvas.setShaderTexture("shader", "tex", "texture", 0);
 		
-		DGL.Shader.setTexture("tex", 0);
-		DGL.Texture.setActive(0, "texture");
-		
-		DGL.Mesh.draw("mesh");
+		canvas.drawMesh("mesh", "shader");
 	}
 }

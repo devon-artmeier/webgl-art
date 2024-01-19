@@ -227,12 +227,13 @@ export class Canvas3 extends Canvas
 	constructor(id: string)
 	{
 		super(id, [480, 360]);
+		let canvas = this._glCanvas;
 		
-		DGL.Texture.create("texture");
-		DGL.Shader.create("shader", vertexShader, fragmentShader);
-		DGL.Shader.create("shader_cube", vertexShaderCube, fragmentShaderCube);
-		DGL.Mesh.createDynamic("mesh");
-		DGL.Mesh.createStatic("mesh_cube", cubeVertices, cubeElements);
+		canvas.createTexture("texture");
+		canvas.createShader("shader", vertexShader, fragmentShader);
+		canvas.createShader("shader_cube", vertexShaderCube, fragmentShaderCube);
+		canvas.createDynamicMesh("mesh");
+		canvas.createStaticMesh("mesh_cube", cubeVertices, cubeElements);
 		
 		this.video = document.createElement("video");
 		this.video.playsInline = true;
@@ -263,11 +264,13 @@ export class Canvas3 extends Canvas
 	
 	private updateMesh()
 	{
+		let canvas = this._glCanvas;
+
 		let width = this.video.videoWidth;
 		let height = this.video.videoHeight;
 		
 		if (this._videoReady && width != 0 && height != 0) {
-			let textureSize = DGL.Texture.getSize("texture");
+			let textureSize = canvas.getTextureSize("texture");
 			
 			if (textureSize[0] != width || textureSize[1] != height) {
 				imgVertices[0].coord[0] = -width / 2;
@@ -288,11 +291,11 @@ export class Canvas3 extends Canvas
 				imgVertices[5].coord[0] = -width / 2;
 				imgVertices[5].coord[1] = height / 2;
 				
-				DGL.Mesh.setVertexArray("mesh", imgVertices, 0);
-				DGL.Mesh.flushVertices("mesh");
+				canvas.setMeshVertices("mesh", imgVertices, 0);
+				canvas.flushMeshVertices("mesh");
 			}
 			
-			DGL.Texture.loadVideoFrame("texture", this.video);
+			canvas.loadTextureVideoFrame("texture", this.video);
 			this._videoTimeUpdate = false;
 		}
 	}
@@ -302,15 +305,16 @@ export class Canvas3 extends Canvas
 		return angle * (Math.PI / 180);
 	}
 	
-	public update(time: number, frame: number)
+	public update(time: number)
 	{
-		DGL.Depth.disable();
+		let canvas = this._glCanvas;
 
-		let res = DGL.Context.getSize();
-		let textureSize = DGL.Texture.getSize("texture");
+		let res = canvas.size;
+		let textureSize = canvas.getTextureSize("texture");
 		
-		DGL.Viewport.set([0, 0], res);
-		DGL.Context.clear([0, 0, 0, 1]);
+		canvas.disableDepth();
+		canvas.setViewport([0, 0], res);
+		canvas.clear([0, 0, 0, 1]);
 		
 		this.updateMesh();
 			
@@ -321,18 +325,15 @@ export class Canvas3 extends Canvas
 		
 		let projection = DGL.Matrix.ortho([-aspect[0] / 2, -aspect[1] / 2], aspect, [0, 1000]);
 			
-		DGL.Shader.bind("shader");
-			
-		DGL.Shader.setVec2("resolution", aspect);
-		DGL.Shader.setFloat("time", time / 1000.0);
-		DGL.Shader.setFloat("randomSeed", Math.random())
+		canvas.setShaderVec2("shader", "resolution", res);
+		canvas.setShaderFloat("shader", "time", time / 1000.0);
+		canvas.setShaderFloat("shader", "randomSeed", Math.random());
 		
-		DGL.Shader.setMatrix4("projection", projection);
+		canvas.setShaderMatrix4("shader", "projection", projection);
 		
-		DGL.Shader.setTexture("tex", 0);
-		DGL.Texture.setActive(0, "texture");
+		canvas.setShaderTexture("shader", "tex", "texture", 0);
 			
-		DGL.Mesh.draw("mesh");
+		canvas.drawMesh("mesh", "shader");
 		
 		if (this._videoReady) {
 			let angle = this.radians(time / 25);
@@ -340,19 +341,16 @@ export class Canvas3 extends Canvas
 			let sin2 = Math.sin(angle * 2) * 12;
 			let cos = Math.cos(angle) * 12;
 
-			DGL.Depth.enable();
-			DGL.Depth.setFunction(DGL.Depth.LessEqual);
+			canvas.enableDepth();
+			canvas.setDepthFunction(DGL.DepthFunc.LessEqual);
 
 			projection = DGL.Matrix.perspective(60, res, [0.1, 1000]);
 			let view = DGL.Matrix.view3D([cos, sin2, sin], [0, 0, 0], [0, 1, 0]);
 			
-			DGL.Shader.bind("shader_cube");
+			canvas.setShaderMatrix4("shader_cube", "projection", projection);
+			canvas.setShaderMatrix4("shader_cube", "view", view);
 			
-			DGL.Shader.setMatrix4("projection", projection);
-			DGL.Shader.setMatrix4("view", view);
-			
-			DGL.Shader.setTexture("tex", 0);
-			DGL.Texture.setActive(0, "texture");
+			canvas.setShaderTexture("shader_cube", "tex", "texture", 0);
 
 			let cubes = [
 				[-6, -6, -6],
@@ -367,8 +365,8 @@ export class Canvas3 extends Canvas
 
 			for (const cube of cubes) {
 				let model = DGL.Matrix.transform3D(cube, [angle * 4, angle * 4, angle * 4], [1, 1, 1]);
-				DGL.Shader.setMatrix4("model", model);
-				DGL.Mesh.draw("mesh_cube");
+				canvas.setShaderMatrix4("shader_cube", "model", model);
+				canvas.drawMesh("mesh_cube", "shader_cube");
 			}
 		}
 	}

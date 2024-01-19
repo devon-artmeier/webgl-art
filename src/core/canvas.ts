@@ -3,8 +3,8 @@ import * as DGL from "devon-webgl"
 export abstract class Canvas
 {
 	private static _canvases = new Map<string, Canvas>();
-	private static _fullscreenCanvas: Canvas;
-	private static _fullscreen: boolean;
+
+	protected _glCanvas: DGL.Canvas;
 	
 	/**************************/
 	/* CLASS OBJECT FUNCTIONS */
@@ -17,40 +17,38 @@ export abstract class Canvas
 		
 		if (element != null) {
 			Canvas._canvases.set(this.id, this);
+
+			this._glCanvas = new DGL.Canvas(this.id, size);
+			let container = this._glCanvas.container;
+			element.appendChild(this._glCanvas.container);
 			
-			DGL.Context.create(this.id, element, size);
-			DGL.Context.bind(this.id);
-			
-			let container = DGL.Context.getContainer(this.id);
 			let button = document.createElement("button");
 			let canvasID = this.id;
 			button.className = "devon-webgl-canvas-container";
 			button.innerText = "Fullscreen";
 			button.onclick = function ()
 			{
-				DGL.Context.setFullscreen(canvasID);
+				Canvas._canvases.get(canvasID)._glCanvas.setFullscreen();
 			};
 			container.after(button);
 		}
 	}
 	
 	// Update
-	public update?(time: number, frame: number): void;
+	public update?(time: number): void;
 	
 	/********************/
 	/* STATIC FUNCTIONS */
 	/********************/
 	
 	// Update all canvases
-	public static update(time: number, frame: number)
+	public static update(time: number)
 	{
 		this._canvases.forEach(function (canvas)
 		{
-			if (!Canvas._fullscreen || (Canvas._fullscreen && Canvas._fullscreenCanvas == canvas)) {
-				DGL.Context.bind(canvas.id);
-				canvas.update(time, frame);
-				DGL.Context.draw();
-			}
+			canvas._glCanvas.startDraw();
+			canvas.update(time);
+			canvas._glCanvas.finishDraw();
 		});
 	}
 }

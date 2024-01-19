@@ -108,52 +108,54 @@ export class Canvas1 extends Canvas
 	constructor(id: string)
 	{
 		super(id, [480, 480]);
-		
-		DGL.Texture.create("texture_bg");
-		DGL.Texture.loadImageFile("texture_bg", "./img/test.png");
-		DGL.Texture.setWrap("texture_bg", DGL.Texture.Mirror);
-		DGL.Texture.createMipmap("texture_bg");
-		
-		DGL.Texture.create("texture_img");
-		DGL.Texture.loadImageFile("texture_img", "./img/test2.png");
-		DGL.Texture.setWrap("texture_img", DGL.Texture.Repeat);
-		DGL.Texture.createMipmap("texture_img");
-		
-		DGL.Shader.create("shader", vertexShader, fragmentShader);
+		let canvas = this._glCanvas;
 
-		DGL.Mesh.createStatic("mesh", imgVertices);
+		canvas.createTexture("texture_bg");
+		canvas.loadTextureImageFile("texture_bg", "./img/test.png");
+		canvas.setTextureWrapS("texture_bg", DGL.TextureWrap.Mirror);
+		canvas.setTextureWrapT("texture_bg", DGL.TextureWrap.Mirror);
+		canvas.genTextureMipmaps("texture_bg");
+
+		canvas.createTexture("texture_img");
+		canvas.loadTextureImageFile("texture_img", "./img/test2.png");
+		canvas.setTextureWrapS("texture_img", DGL.TextureWrap.Repeat);
+		canvas.setTextureWrapT("texture_img", DGL.TextureWrap.Repeat);
+		canvas.genTextureMipmaps("texture_img");
+
+		canvas.createShader("shader", vertexShader, fragmentShader);
+
+		canvas.createStaticMesh("mesh", imgVertices);
 	}
 	
-	public update(time: number, frame: number)
+	public update(time: number)
 	{
-		let res = DGL.Context.getSize();
-		let tex1Size = DGL.Texture.getSize("texture_bg");
-		let tex2Size = DGL.Texture.getSize("texture_img");
+		let canvas = this._glCanvas;
+
+		let res = canvas.size;
+		let tex1Size = canvas.getTextureSize("texture_bg");
+		let tex2Size = canvas.getTextureSize("texture_img");
 		
 		let scale = ((Math.sin(radians(time / 15.0)) + 1) * 2) + 0.5;
 		
-		DGL.Viewport.set([0, 0], res);
-		DGL.Context.clear([0, 0, 0, 1]);
+		canvas.setViewport([0, 0], res);
+		canvas.clear([0, 0, 0, 1]);
 		
 		let projection = DGL.Matrix.ortho([-res[0] / 2 , -res[1] / 2], res, [0, 1]);
 		let model = DGL.Matrix.transform2D([0, 0], 0, [scale, scale]);
+
+		canvas.setShaderVec2("shader", "resolution", res);
+		canvas.setShaderFloat("shader", "time", time / 1000.0);
 		
-		DGL.Shader.bind("shader");
+		canvas.setShaderMatrix4("shader", "projection", projection);
+		canvas.setShaderMatrix4("shader", "model", model);
 		
-		DGL.Shader.setVec2("resolution", res);
-		DGL.Shader.setFloat("time", time / 1000.0);
+		canvas.setShaderTexture("shader", "tex1", "texture_bg", 0);
+		canvas.setShaderTexture("shader", "tex2", "texture_img", 1);
+		canvas.setShaderVec2("shader", "tex1Size", tex1Size);
+		canvas.setShaderVec2("shader", "tex2Size", tex2Size);
 		
-		DGL.Shader.setMatrix4("projection", projection);
-		DGL.Shader.setMatrix4("model", model);
-		
-		DGL.Shader.setTexture("tex1", 0);
-		DGL.Shader.setTexture("tex2", 1);
-		DGL.Shader.setVec2("tex1Size", tex1Size);
-		DGL.Shader.setVec2("tex2Size", tex2Size);
-		
-		DGL.Texture.setActive(0, "texture_bg");
-		DGL.Texture.setActive(1, "texture_img");
-		
-		DGL.Mesh.draw("mesh");
+		canvas.drawMesh("mesh", "shader");
+
+		//canvas.delete();
 	}
 }

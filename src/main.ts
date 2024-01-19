@@ -16,7 +16,7 @@ document.getElementById("bad-apple").onclick = function ()
 
 function render(time: number)
 {
-	Canvas.update(time, frame++);
+	Canvas.update(time);
 	requestAnimationFrame(render);
 }
 requestAnimationFrame(render);
